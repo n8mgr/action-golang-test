@@ -35,7 +35,7 @@ jobs:
         # the release PR commits a fresh build, so a release commit must never ship a stale bundle
         if: "contains(github.event.head_commit.message, 'chore: prepare release')"
         run: git diff --exit-code -- dist
-      - run: bun test
+      - run: bun run test
   release:
     name: Create GitHub Release
     # only release when a knope prepare-release PR is merged
