@@ -22,6 +22,7 @@ ignore_conventional_commits = true
 [[workflows.steps]]
 type = "Command"
 command = "bun install --frozen-lockfile && bun run package && git add dist"
+shell = true
 
 [[workflows.steps]]
 type = "Command"
@@ -59,6 +60,7 @@ prerelease_label = "beta"
 [[workflows.steps]]
 type = "Command"
 command = "bun install --frozen-lockfile && bun run package && git add dist"
+shell = true
 
 [[workflows.steps]]
 type = "Command"
