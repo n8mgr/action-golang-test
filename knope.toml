@@ -1,0 +1,112 @@
+[package]
+changelog = "CHANGELOG.md"
+versioned_files = ["package.json"]
+
+[[workflows]]
+name = "document-change"
+
+[[workflows.steps]]
+type = "CreateChangeFile"
+
+[[workflows]]
+name = "prepare-release"
+
+[[workflows.steps]]
+type = "Command"
+command = "git switch -c release"
+
+[[workflows.steps]]
+type = "PrepareRelease"
+ignore_conventional_commits = true
+
+[[workflows.steps]]
+type = "Command"
+command = "bun install --frozen-lockfile && bun run package && git add dist"
+
+[[workflows.steps]]
+type = "Command"
+command = "git commit -m \"chore: prepare release $version\""
+variables = { "$version" = "Version" }
+
+[[workflows.steps]]
+type = "Command"
+command = "git push --force --set-upstream origin release"
+
+[[workflows.steps]]
+type = "CreatePullRequest"
+base = "main"
+
+[workflows.steps.title]
+template = "chore: prepare release $version"
+variables = { "$version" = "Version" }
+
+[workflows.steps.body]
+template = "This PR was created automatically. Merging it will finalize the changelog for $version\n\n$changelog"
+variables = { "$changelog" = "ChangelogEntry", "$version" = "Version" }
+
+[[workflows]]
+name = "prepare-beta"
+
+[[workflows.steps]]
+type = "Command"
+command = "git switch -c release-beta"
+
+[[workflows.steps]]
+type = "PrepareRelease"
+ignore_conventional_commits = true
+prerelease_label = "beta"
+
+[[workflows.steps]]
+type = "Command"
+command = "bun install --frozen-lockfile && bun run package && git add dist"
+
+[[workflows.steps]]
+type = "Command"
+command = "git commit -m \"chore: prepare release $version\""
+variables = { "$version" = "Version" }
+
+[[workflows.steps]]
+type = "Command"
+command = "git push --force --set-upstream origin release-beta"
+
+[[workflows.steps]]
+type = "CreatePullRequest"
+base = "main"
+
+[workflows.steps.title]
+template = "chore: prepare release $version"
+variables = { "$version" = "Version" }
+
+[workflows.steps.body]
+template = "This PR was created automatically. Merging it will finalize the changelog for beta $version\n\n$changelog"
+variables = { "$changelog" = "ChangelogEntry", "$version" = "Version" }
+
+[[workflows]]
+name = "release"
+
+[[workflows.steps]]
+type = "Release"
+
+[[workflows.steps]]
+type = "Command"
+command = """
+set -e
+v="$version"
+case "$v" in
+  *-*) echo "prerelease, not moving major/minor tags" ;;
+  *)
+    # GitHub Actions convention: vMAJOR and vMAJOR.MINOR always point at the latest stable release
+    major="v${v%%.*}"
+    minor="v${v%.*}"
+    git tag -f "$major"
+    git tag -f "$minor"
+    git push --force origin "$major" "$minor"
+    ;;
+esac
+"""
+shell = true
+variables = { "$version" = "Version" }
+
+[github]
+owner = "n8maninger"
+repo = "action-golang-test"
